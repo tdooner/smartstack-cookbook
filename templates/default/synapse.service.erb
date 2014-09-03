@@ -1,0 +1,11 @@
+[Unit]
+Description=SmartStack Synapse
+After=network.target
+
+[Service]
+Type=simple
+Environment="GEM_HOME=<%= node.smartstack.gem_home %>" "RBENV_ROOT=/usr/local/rbenv"
+WorkingDirectory=<%= node.synapse.install_dir %>
+User=<%= node.smartstack.user %>
+Group=<%= node.smartstack.user %>
+ExecStart=/usr/local/rbenv/shims/bundle exec <%= node.synapse.install_dir %>/bin/synapse --config <%= node.synapse.config_file %> 2>&1

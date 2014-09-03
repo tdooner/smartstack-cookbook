@@ -25,7 +25,7 @@ else
     enable_submodules true
     action     :sync
     notifies   :run, 'execute[nerve_install]', :immediately
-    notifies   :restart, 'runit_service[nerve]'
+    notifies   :restart, 'service[nerve]'
   end
 
   # do the actual install of nerve and dependencies
@@ -35,8 +35,11 @@ else
     group   node.smartstack.user
     action  :nothing
 
-    environment ({'GEM_HOME' => node.smartstack.gem_home})
-    command     "bundle install --without development"
+    environment ({
+      'GEM_HOME' => node.smartstack.gem_home,
+      'RBENV_ROOT' => '/usr/local/rbenv'
+    })
+    command     "/usr/local/rbenv/shims/bundle install --without development"
   end
 end
 
@@ -77,13 +80,14 @@ file node.nerve.config_file do
   user    node.smartstack.user
   group   node.smartstack.user
   content JSON::pretty_generate(node.nerve.config.deep_to_hash)
-  notifies :restart, 'runit_service[nerve]'
+  notifies :restart, 'service[nerve]'
 end
 
-# set up runit service
-# we don't want a converge to randomly start nerve if someone is debugging
-# so, we only enable nerve; setting it up initially causes it to start,
-runit_service 'nerve' do
+template '/usr/lib/systemd/system/nerve.service' do
+  notifies :restart, 'service[nerve]'
+end
+
+service 'nerve' do
   action :enable
-  default_logger true
+  provider Chef::Provider::Service::Systemd
 end

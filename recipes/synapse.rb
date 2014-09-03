@@ -6,10 +6,10 @@ package 'haproxy' do
   action :upgrade
 end
 
-file '/etc/default/haproxy' do
-  mode    00444
-  content 'ENABLED=1'
-end
+# file '/etc/default/haproxy' do
+#   mode    00444
+#   content 'ENABLED=1'
+# end
 
 directory node.synapse.haproxy.sock_dir do
   owner 'haproxy'
@@ -21,14 +21,21 @@ file node.synapse.config.haproxy.config_file_path do
   owner 'haproxy'
   group node.smartstack.user
   mode  00664
+  notifies :restart, 'service[haproxy]', :immediately
 end
 
 # allow synapse to restart haproxy
-file File.join("/etc/sudoers.d", node.smartstack.user) do
-  owner   "root"
-  group   "root"
-  mode    0440
-  content "#{node.smartstack.user} ALL= NOPASSWD: /usr/sbin/service haproxy reload\n"
+# file File.join("/etc/sudoers.d", node.smartstack.user) do
+#   owner   "root"
+#   group   "root"
+#   mode    0440
+#   content "#{node.smartstack.user} ALL= NOPASSWD: /usr/sbin/service haproxy reload\n"
+# end
+#
+sudo node['smartstack']['user'] do
+  user node['smartstack']['user']
+  commands ["/sbin/service haproxy reload"]
+  nopasswd true
 end
 
 # get the synapse code
@@ -55,7 +62,7 @@ else
     enable_submodules true
     action     :sync
     notifies   :run, 'execute[synapse_install]', :immediately
-    notifies   :restart, 'runit_service[synapse]'
+    notifies   :restart, 'service[synapse]'
   end
 
   # do the actual install of synapse and dependencies
@@ -65,8 +72,11 @@ else
     group   node.smartstack.user
     action  :nothing
 
-    environment ({'GEM_HOME' => node.smartstack.gem_home})
-    command     "bundle install --without development"
+    environment ({
+      'GEM_HOME' => node.smartstack.gem_home,
+      'RBENV_ROOT' => '/usr/local/rbenv'
+    })
+    command     "/usr/local/rbenv/shims/bundle install --without development"
   end
 end
 
@@ -112,11 +122,19 @@ file node.synapse.config_file do
   owner   node.smartstack.user
   group   node.smartstack.user
   content JSON::pretty_generate(node.synapse.config.deep_to_hash)
-  notifies :restart, "runit_service[synapse]"
+  notifies :restart, "service[synapse]"
 end
 
-# set up runit service
-runit_service "synapse" do
+template '/usr/lib/systemd/system/synapse.service' do
+  notifies :restart, 'service[synapse]'
+end
+
+service 'haproxy' do
+  action [:enable, :start]
+end
+
+# set up systemd service
+service 'synapse' do
   action :enable
-  default_logger true
+  provider Chef::Provider::Service::Systemd
 end
