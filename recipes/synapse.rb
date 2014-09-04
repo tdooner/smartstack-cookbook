@@ -6,11 +6,6 @@ package 'haproxy' do
   action :upgrade
 end
 
-# file '/etc/default/haproxy' do
-#   mode    00444
-#   content 'ENABLED=1'
-# end
-
 directory node.synapse.haproxy.sock_dir do
   owner 'haproxy'
   group 'haproxy'
@@ -25,13 +20,6 @@ file node.synapse.config.haproxy.config_file_path do
 end
 
 # allow synapse to restart haproxy
-# file File.join("/etc/sudoers.d", node.smartstack.user) do
-#   owner   "root"
-#   group   "root"
-#   mode    0440
-#   content "#{node.smartstack.user} ALL= NOPASSWD: /usr/sbin/service haproxy reload\n"
-# end
-#
 sudo node['smartstack']['user'] do
   user node['smartstack']['user']
   commands ["/sbin/service haproxy reload"]
