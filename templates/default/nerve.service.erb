@@ -8,4 +8,5 @@ Environment="GEM_HOME=<%= node.smartstack.gem_home %>" "RBENV_ROOT=/usr/local/rb
 WorkingDirectory=<%= node.nerve.install_dir %>
 User=<%= node.smartstack.user %>
 Group=<%= node.smartstack.user %>
+Restart=on-failure
 ExecStart=/usr/local/rbenv/shims/bundle exec <%= node.nerve.install_dir %>/bin/nerve --config <%= node.nerve.config_file %> 2>&1

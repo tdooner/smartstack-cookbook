@@ -8,4 +8,5 @@ Environment="GEM_HOME=<%= node.smartstack.gem_home %>" "RBENV_ROOT=/usr/local/rb
 WorkingDirectory=<%= node.synapse.install_dir %>
 User=<%= node.smartstack.user %>
 Group=<%= node.smartstack.user %>
+Restart=on-failure
 ExecStart=/usr/local/rbenv/shims/bundle exec <%= node.synapse.install_dir %>/bin/synapse --config <%= node.synapse.config_file %> 2>&1
